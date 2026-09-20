@@ -80,7 +80,7 @@ interface SftpPaneViewProps {
   showEmptyHeader?: boolean;
   onToggleShowHiddenFiles?: () => void;
   onGoToTerminalCwd?: () => void;
-  onLocatePathInTerminal?: () => void;
+  onLocatePathInTerminal?: (path?: string) => void;
   followTerminalCwd?: boolean;
   onToggleFollowTerminalCwd?: () => void;
   /** When true, treat this pane as always active (used by SftpSidePanel which manages visibility itself) */
@@ -686,6 +686,7 @@ const SftpPaneViewInner: React.FC<SftpPaneViewProps> = ({
           handleRowDragLeave={handleRowDragLeave}
           handleEntryDrop={handleEntryDrop}
           onCopyToOtherPane={callbacks.onCopyToOtherPane}
+          onLocatePathInTerminal={onLocatePathInTerminal}
           onMoveEntriesToPath={handleMoveEntriesToPath}
           onOpenFileWithSystemDefault={callbacks.onOpenFileWithSystemDefault}
           onOpenFileWith={callbacks.onOpenFileWith}

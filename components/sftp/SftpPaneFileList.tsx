@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AppWindow, Archive, ArrowDown, ArrowRight, ArrowUp, ChevronDown, ClipboardCopy, Copy, Download, Edit2, ExternalLink, FilePlus, Folder, FolderPlus, Loader2, Pencil, RefreshCw, Shield, Trash2, Unplug, Upload } from "lucide-react";
+import { AppWindow, Archive, ArrowDown, ArrowRight, ArrowUp, ChevronDown, ClipboardCopy, Copy, Download, Edit2, ExternalLink, FilePlus, Folder, FolderPlus, Loader2, Pencil, RefreshCw, Shield, Terminal, Trash2, Unplug, Upload } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   ContextMenu,
@@ -61,6 +61,7 @@ interface SftpPaneFileListProps {
   handleRowDragLeave: () => void;
   handleEntryDrop: (entry: SftpFileEntry, e: React.DragEvent) => void;
   onCopyToOtherPane: (files: SftpTransferSource[]) => void;
+  onLocatePathInTerminal?: (path: string) => void;
   onMoveEntriesToPath: (sourcePaths: string[], targetPath: string) => Promise<void>;
   onOpenFileWithSystemDefault?: (entry: SftpFileEntry) => void;
   onOpenFileWith?: (entry: SftpFileEntry) => void;
@@ -151,6 +152,7 @@ export const SftpPaneFileList: React.FC<SftpPaneFileListProps> = React.memo(({
   handleRowDragLeave,
   handleEntryDrop,
   onCopyToOtherPane,
+  onLocatePathInTerminal,
   onMoveEntriesToPath,
   onOpenFileWithSystemDefault,
   onOpenFileWith,
@@ -399,6 +401,11 @@ export const SftpPaneFileList: React.FC<SftpPaneFileListProps> = React.memo(({
               <Copy size={14} className="mr-2" />{" "}
               {t("sftp.context.copyToOtherPane")}
             </ContextMenuItem>
+            {onLocatePathInTerminal && pane.connection && !pane.connection.isLocal && (
+              <ContextMenuItem onClick={() => onLocatePathInTerminal(joinPath(pane.connection!.currentPath, entry.name))}>
+                <Terminal size={14} className="mr-2" /> {t("sftp.locatePathInTerminal")}
+              </ContextMenuItem>
+            )}
             <ContextMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(joinPath(pane.connection.currentPath, entry.name));
@@ -498,6 +505,7 @@ export const SftpPaneFileList: React.FC<SftpPaneFileListProps> = React.memo(({
       dragOverEntry,
       isPaneFocused,
       onCopyToOtherPane,
+      onLocatePathInTerminal,
       onMoveEntriesToPath,
       onDownloadFile,
       onDownloadFiles,

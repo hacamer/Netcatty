@@ -1724,7 +1724,10 @@ const SftpSidePanelInteractiveBody: React.FC<SftpSidePanelInteractiveBodyProps> 
 
   const canLocatePathInTerminal = canLocateSftpPathInTerminal(locatePathInTerminalContext);
 
-  const handleLocatePathInTerminal = useCallback(() => {
+  const handleLocatePathInTerminal = useCallback((requestedPath?: string) => {
+    const requested = typeof requestedPath === "string" && requestedPath.length > 0
+      ? requestedPath
+      : undefined;
     const connection = sftpRef.current.leftPane.connection;
     const locateSessionId = resolveLocateSftpPathSessionId({
       activeSessionId,
@@ -1736,7 +1739,8 @@ const SftpSidePanelInteractiveBody: React.FC<SftpSidePanelInteractiveBodyProps> 
       || classifyDistroId(host?.distro) === "network-device";
     const action = resolveLocateSftpPathInTerminalAction({
       // Prefer the path shown in the toolbar, not an in-flight optimistic cwd.
-      path: confirmedLocatePathRef.current || connection?.currentPath,
+      path: requested ?? (confirmedLocatePathRef.current || connection?.currentPath),
+      insertPathOnly: requested !== undefined,
       sessionId: locateSessionId,
       sessionStatus: session?.status,
       sessionHostId: session?.hostId,
@@ -1758,7 +1762,10 @@ const SftpSidePanelInteractiveBody: React.FC<SftpSidePanelInteractiveBodyProps> 
     // Never inject cd into a password/sudo prompt (same guard as snippets/broadcast).
     if (isTerminalSensitiveInputActive(action.sessionId)) return;
     // Only submit at an idle shell prompt -- never append into typed input or a TUI.
-    if (!isTerminalReadyForCommandInjection(action.sessionId)) return;
+    // Path insertion intentionally supports appending several arguments to an
+    // existing command line (for example: `rm <file1> <file2>`). The sensitive
+    // input guard above still blocks password/TUI prompts.
+    if (!requested && !isTerminalReadyForCommandInjection(action.sessionId)) return;
     terminalBackend.writeToSession(action.sessionId, action.data, { automated: true });
     scheduleDeferredTerminalFocus(onRequestTerminalFocus);
   }, [

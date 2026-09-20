@@ -40,6 +40,11 @@ test("SFTP toolbar includes compact list density next to view mode", () => {
   assert.match(toolbarSource, /getSftpListDensityToggleLabelKey/);
 });
 
+test("SFTP locate toolbar actions invoke the handler without passing the click event", () => {
+  assert.match(toolbarSource, /onLocatePathInTerminal\?: \(path\?: string\) => void/);
+  assert.match(toolbarSource, /onClick=\{\(\) => onLocatePathInTerminal\(\)\}/);
+});
+
 test("narrow SFTP toolbar spills non-pinned show items into overflow without changing hide/collapse", () => {
   const shown = ["bookmark", "copyPath", "viewMode", "filter", "newFolder", "newFile", "refresh"];
   const collapsed = ["encoding"];

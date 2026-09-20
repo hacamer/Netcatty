@@ -1,4 +1,4 @@
-import { resolveInteractiveTerminalCdIntent } from "./sessionRestore";
+import { resolveInteractiveTerminalCdIntent, quoteRestoreCwdArgument } from "./sessionRestore";
 
 export type LocateSftpPathInTerminalContext = {
   path?: string | null;
@@ -70,10 +70,13 @@ export function canLocateSftpPathInTerminal(
 
 /** Session write payload for locating the SFTP path in the linked terminal. */
 export function resolveLocateSftpPathInTerminalAction(
-  options: LocateSftpPathInTerminalContext,
+  options: LocateSftpPathInTerminalContext & { insertPathOnly?: boolean },
 ): { sessionId: string; data: string } | null {
   if (!canLocateSftpPathInTerminal(options) || !options.sessionId) return null;
   const intent = resolveInteractiveTerminalCdIntent(options.path);
   if (!intent) return null;
-  return { sessionId: options.sessionId, data: `${intent.command}\r` };
+  const data = options.insertPathOnly
+    ? `${quoteRestoreCwdArgument(intent.cwd)} `
+    : `${intent.command}\r`;
+  return { sessionId: options.sessionId, data };
 }

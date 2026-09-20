@@ -255,7 +255,7 @@ export function quoteRestoreCwdForShell(cwd: string): string {
   return `'${cwd.replace(/'/g, "'\\''")}'`;
 }
 
-function quoteRestoreCwdArgument(cwd: string): string {
+export function quoteRestoreCwdArgument(cwd: string): string {
   if (cwd === "~") return "~";
   if (cwd.startsWith("~/")) {
     const suffix = cwd.slice(2);

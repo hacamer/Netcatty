@@ -21,6 +21,14 @@ import {
 } from "../../../domain/sftpDropElevation";
 import { toast } from "../../ui/toast";
 import {
+  areSftpDragPathsSafe,
+  buildSftpPathInsertText,
+  decodeSftpPathDragPayload,
+  type SftpPathDragPayload,
+  SFTP_PATH_DRAG_MIME,
+} from "../../../domain/sftpPathDrag";
+import { isTerminalReadyForCommandInjection } from "../runtime/terminalCommandInjectionReadyRegistry";
+import {
   extractRootPathsFromDropEntries,
   type TerminalProps,
 } from "../terminalHelpers";
@@ -65,6 +73,17 @@ interface UseTerminalDragDropOptions {
 // Keep this aligned with the main-process drag-drop start watchdog. Falling
 // back sooner interrupts valid rz handshakes on slow shells and jump routes.
 export const DEFAULT_RZ_MISSING_FALLBACK_TIMEOUT_MS = 15_000;
+
+export function resolveSftpPathDragInsertText(
+  payload: SftpPathDragPayload,
+  hostId: string,
+  sessionId: string | null,
+  ready: boolean,
+): string | null {
+  if (payload.hostId !== hostId || !areSftpDragPathsSafe(payload.paths)) return null;
+  if (!sessionId || !ready) return null;
+  return buildSftpPathInsertText(payload.paths);
+}
 
 export class ActiveTerminalCwdUnavailableError extends Error {
   constructor() {
@@ -357,7 +376,7 @@ export function useTerminalDragDrop({
     e.preventDefault();
     e.stopPropagation();
     dragCounterRef.current++;
-    if (e.dataTransfer.types.includes("Files")) {
+    if (e.dataTransfer.types.includes("Files") || e.dataTransfer.types.includes(SFTP_PATH_DRAG_MIME)) {
       setIsDraggingOver(true);
     }
   };
@@ -365,7 +384,7 @@ export function useTerminalDragDrop({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.dataTransfer.types.includes("Files")) {
+    if (e.dataTransfer.types.includes("Files") || e.dataTransfer.types.includes(SFTP_PATH_DRAG_MIME)) {
       e.dataTransfer.dropEffect = "copy";
     }
   };
@@ -384,6 +403,29 @@ export function useTerminalDragDrop({
     e.stopPropagation();
     dragCounterRef.current = 0;
     setIsDraggingOver(false);
+
+    const sftpPayload = decodeSftpPathDragPayload(e.dataTransfer.getData(SFTP_PATH_DRAG_MIME));
+    if (sftpPayload) {
+      if (isSensitiveInput?.()) {
+        logger.warn("Rejected SFTP path drag while terminal input is sensitive");
+        return;
+      }
+      const sessionId = sessionRef.current;
+      const text = resolveSftpPathDragInsertText(
+        sftpPayload,
+        host.id,
+        sessionId,
+        sessionId ? isTerminalReadyForCommandInjection(sessionId) : false,
+      );
+      if (!text) {
+        logger.warn("Rejected SFTP path drag: host mismatch, unsafe path, missing session, or terminal not ready");
+        return;
+      }
+      terminalBackend.writeToSession(sessionId!, text, { automated: true });
+      scrollToBottomAfterProgrammaticInput(text);
+      termRef.current?.focus();
+      return;
+    }
 
     if (!e.dataTransfer.types.includes("Files")) {
       return;

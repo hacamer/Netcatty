@@ -232,7 +232,7 @@ interface SftpPaneToolbarProps {
   showHiddenFiles: boolean;
   onToggleShowHiddenFiles?: () => void;
   onGoToTerminalCwd?: () => void;
-  onLocatePathInTerminal?: () => void;
+  onLocatePathInTerminal?: (path?: string) => void;
   followTerminalCwd?: boolean;
   onToggleFollowTerminalCwd?: () => void;
   viewMode: SftpPaneViewMode;
@@ -949,7 +949,7 @@ export const SftpPaneToolbar: React.FC<SftpPaneToolbarProps> = React.memo(({
                 size="icon"
                 className="h-6 w-6"
                 aria-label={t("sftp.locatePathInTerminal")}
-                onClick={onLocatePathInTerminal}
+                onClick={() => onLocatePathInTerminal()}
               >
                 <Terminal size={14} />
               </Button>
@@ -1126,7 +1126,7 @@ export const SftpPaneToolbar: React.FC<SftpPaneToolbarProps> = React.memo(({
       case "locatePathInTerminal":
         if (!onLocatePathInTerminal) return null;
         return (
-          <button key={id} type="button" className={menuItemClass} onClick={onLocatePathInTerminal}>
+          <button key={id} type="button" className={menuItemClass} onClick={() => onLocatePathInTerminal()}>
             <Terminal size={14} className="shrink-0" />
             {t("sftp.locatePathInTerminal")}
           </button>

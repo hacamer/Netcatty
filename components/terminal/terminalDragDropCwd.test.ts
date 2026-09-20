@@ -9,7 +9,9 @@ import {
   DEFAULT_RZ_MISSING_FALLBACK_TIMEOUT_MS,
   handleTerminalDropEntries,
   resolveTerminalDropErrorMessage,
+  resolveSftpPathDragInsertText,
 } from "./hooks/useTerminalDragDrop";
+import { decodeSftpPathDragPayload, encodeSftpPathDragPayload } from "../../domain/sftpPathDrag";
 import { resolvePreferredTerminalCwd } from "./sftpCwd";
 
 const host = {
@@ -31,6 +33,13 @@ const dropEntries: DropEntry[] = [
 
 test("terminal drag-drop allows the full ZMODEM startup window before falling back", () => {
   assert.equal(DEFAULT_RZ_MISSING_FALLBACK_TIMEOUT_MS, 15_000);
+});
+
+test("SFTP path drag does not inject into a non-ready terminal", () => {
+  const payload = decodeSftpPathDragPayload(encodeSftpPathDragPayload(host.id, ["/srv/report.txt"]));
+  assert.ok(payload);
+  assert.equal(resolveSftpPathDragInsertText(payload, host.id, "session-1", false), null);
+  assert.equal(resolveSftpPathDragInsertText(payload, host.id, "session-1", true), "'/srv/report.txt' ");
 });
 
 test("terminal drag-drop shows actionable guidance when the active directory is unknown", () => {

@@ -1,5 +1,6 @@
 import { netcattyBridge } from "../../../infrastructure/services/netcattyBridge";
 import { joinPath } from "./utils";
+import { encodeSftpPathDragPayload, SFTP_PATH_DRAG_MIME } from "../../../domain/sftpPathDrag";
 
 export interface LocalDragSource {
   name: string;
@@ -101,7 +102,7 @@ type DragEventLike = Pick<DragEvent, "dataTransfer" | "preventDefault">;
 export function startSftpFileDrag({ event, paneId, connection, sources, side, onRemoteDrag, onError }: {
   event: DragEventLike;
   paneId: string;
-  connection?: { id: string; isLocal?: boolean } | null;
+  connection?: { id: string; hostId?: string; isLocal?: boolean } | null;
   sources: Omit<LocalDragSource, "side">[];
   side: "left" | "right";
   onRemoteDrag: (sources: Omit<LocalDragSource, "side">[], side: "left" | "right") => void;
@@ -110,8 +111,19 @@ export function startSftpFileDrag({ event, paneId, connection, sources, side, on
   clearLocalFileDrag();
   if (connection?.isLocal !== true) {
     event.dataTransfer!.effectAllowed = "copyMove";
-    event.dataTransfer!.setData("text/plain", sources.map((file) => file.name).join("\n"));
-    onRemoteDrag(sources, side);
+    const files = sources.filter((file) => file.sourcePath);
+    if (!connection?.hostId) {
+      onError("The remote connection is not ready.");
+      return;
+    }
+    if (!files.length || files.length !== sources.length) {
+      onError("The remote file selection is no longer available.");
+      return;
+    }
+    const paths = files.map((file) => joinPath(file.sourcePath!, file.name));
+    event.dataTransfer!.setData(SFTP_PATH_DRAG_MIME, encodeSftpPathDragPayload(connection?.hostId, paths));
+    event.dataTransfer!.setData("text/plain", files.map((file) => file.name).join("\n"));
+    onRemoteDrag(files, side);
     return;
   }
   event.preventDefault();

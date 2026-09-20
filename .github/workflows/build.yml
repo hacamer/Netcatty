@@ -334,6 +334,18 @@ jobs:
         run: npm run test:tray-panel-layout
 
       - name: Upload artifacts
+        if: matrix.name == 'windows' && !(startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_release)))
+        uses: actions/upload-artifact@v7
+        with:
+          name: netcatty-windows-x64
+          path: release/*-win-x64.zip
+          if-no-files-found: error
+
+      # Releases still need the complete cross-platform artifact set and
+      # update metadata. Ordinary CI runs intentionally publish only the
+      # Windows x64 zip above.
+      - name: Upload release artifacts
+        if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_release))
         uses: actions/upload-artifact@v7
         with:
           name: netcatty-${{ matrix.name }}

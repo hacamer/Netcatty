@@ -40,6 +40,7 @@ interface UseTerminalDragDropOptions {
   /** Login username already resolved through host auth (host or Keychain identity). */
   resolvedLoginUsername?: string;
   isLocalConnection: boolean;
+  shellType?: TerminalSession["shellType"];
   isNetworkDevice?: boolean;
   onOpenSftp?: TerminalProps["onOpenSftp"];
   resolveSftpInitialPath: (options?: {
@@ -79,10 +80,11 @@ export function resolveSftpPathDragInsertText(
   hostId: string,
   sessionId: string | null,
   ready: boolean,
+  shellType?: TerminalSession["shellType"],
 ): string | null {
   if (payload.hostId !== hostId || !areSftpDragPathsSafe(payload.paths)) return null;
   if (!sessionId || !ready) return null;
-  return buildSftpPathInsertText(payload.paths);
+  return buildSftpPathInsertText(payload.paths, shellType);
 }
 
 export class ActiveTerminalCwdUnavailableError extends Error {
@@ -356,6 +358,7 @@ export function useTerminalDragDrop({
   resolvedLoginUsername,
   resolvedSudoPassword,
   isLocalConnection,
+  shellType,
   isNetworkDevice = false,
   onOpenSftp,
   resolveSftpInitialPath,
@@ -416,6 +419,7 @@ export function useTerminalDragDrop({
         host.id,
         sessionId,
         sessionId ? isTerminalReadyForCommandInjection(sessionId) : false,
+        shellType,
       );
       if (!text) {
         logger.warn("Rejected SFTP path drag: host mismatch, unsafe path, missing session, or terminal not ready");

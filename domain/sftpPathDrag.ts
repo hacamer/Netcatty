@@ -1,4 +1,5 @@
 import { resolveInteractiveTerminalCdIntent } from "./sessionRestore";
+import type { TerminalSession } from "./models/terminal";
 
 export const SFTP_PATH_DRAG_MIME = "application/x-netcatty-sftp-paths";
 
@@ -30,12 +31,24 @@ export function decodeSftpPathDragPayload(raw: string): SftpPathDragPayload | nu
   }
 }
 
-export function quoteShellArgument(value: string): string {
+export function quoteShellPath(value: string, shellType: TerminalSession["shellType"] = "posix"): string {
+  if (shellType === "powershell") {
+    return `'${value.replace(/'/g, "''")}'`;
+  }
+  if (shellType === "cmd") {
+    // CMD treats metacharacters as literal inside double quotes. Escape the
+    // quote itself and the escape character so the path cannot terminate the
+    // argument early.
+    return `"${value.replace(/(["^])/g, "^$1")}"`;
+  }
   return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
-export function buildSftpPathInsertText(paths: readonly string[]): string {
-  return `${paths.map(quoteShellArgument).join(" ")} `;
+export function buildSftpPathInsertText(
+  paths: readonly string[],
+  shellType: TerminalSession["shellType"] = "posix",
+): string {
+  return `${paths.map((path) => quoteShellPath(path, shellType)).join(" ")} `;
 }
 
 export function areSftpDragPathsSafe(paths: readonly string[]): boolean {

@@ -1737,9 +1737,18 @@ const SftpSidePanelInteractiveBody: React.FC<SftpSidePanelInteractiveBodyProps> 
     const host = displayHost ?? activeHost;
     const isNetworkDevice = host?.deviceType === "network"
       || classifyDistroId(host?.distro) === "network-device";
+    const selected = connection?.currentPath
+      ? Array.from(sftpRef.current.leftPane.selectedFiles ?? [])
+      : [];
+    const selectedNames = requested && connection?.currentPath && selected.some((name) =>
+      joinPath(connection.currentPath, name) === requested)
+      ? selected
+      : undefined;
+    const paths = selectedNames?.map((name) => joinPath(connection?.currentPath ?? "", name));
     const action = resolveLocateSftpPathInTerminalAction({
       // Prefer the path shown in the toolbar, not an in-flight optimistic cwd.
       path: requested ?? (confirmedLocatePathRef.current || connection?.currentPath),
+      paths: paths && paths.length > 0 ? paths : requested ? [requested] : undefined,
       insertPathOnly: requested !== undefined,
       sessionId: locateSessionId,
       sessionStatus: session?.status,

@@ -1,7 +1,9 @@
 import { resolveInteractiveTerminalCdIntent, quoteRestoreCwdArgument } from "./sessionRestore";
+import { buildSftpPathInsertText } from "./sftpPathDrag";
 
 export type LocateSftpPathInTerminalContext = {
   path?: string | null;
+  paths?: readonly string[];
   sessionId?: string | null;
   sessionStatus?: string | null;
   sessionHostId?: string | null;
@@ -76,7 +78,11 @@ export function resolveLocateSftpPathInTerminalAction(
   const intent = resolveInteractiveTerminalCdIntent(options.path);
   if (!intent) return null;
   const data = options.insertPathOnly
-    ? `${quoteRestoreCwdArgument(intent.cwd)} `
+    ? buildSftpPathInsertText(options.paths?.length ? options.paths : [intent.cwd], normalizeShellType(options.shellType))
     : `${intent.command}\r`;
   return { sessionId: options.sessionId, data };
+}
+
+function normalizeShellType(value: string | null | undefined): "posix" | "fish" | "powershell" | "cmd" {
+  return value === "fish" || value === "powershell" || value === "cmd" ? value : "posix";
 }

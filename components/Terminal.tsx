@@ -3409,6 +3409,7 @@ const TerminalComponent: React.FC<TerminalProps> = ({
     onBroadcastInputRef,
     passwordPromptActiveRef,
     isLocalConnection,
+    shellType,
     supportsRemoteImagePaste,
     autoUploadClipboardImageOnPasteRef,
     multilinePasteConfirmRef,
